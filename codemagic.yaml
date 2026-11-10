@@ -1,0 +1,49 @@
+workflows:
+  mahjong-christmas-android:
+    name: Mahjong Christmas Android
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    environment:
+      vars:
+        GODOT_VERSION: 4.7.2
+        GODOT_RELEASE: 4.7.2-stable
+    scripts:
+      - name: Install Godot and Android export templates
+        script: |
+          set -e
+          curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_macos.universal.zip"
+          unzip -q godot.zip -d godot
+          GODOT_BIN="$(find "$CM_BUILD_DIR/godot" -type f -path '*Godot.app/Contents/MacOS/Godot' | head -n 1)"
+          test -n "$GODOT_BIN"
+          chmod +x "$GODOT_BIN"
+          curl -L -o godot_export_templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          "$GODOT_BIN" --headless --editor --path "$CM_BUILD_DIR" --install-export-templates "$CM_BUILD_DIR/godot_export_templates.tpz" --quit
+      - name: Configure Godot Android export
+        script: |
+          set -e
+          mkdir -p "$HOME/Library/Application Support/Godot"
+          cat > "$HOME/Library/Application Support/Godot/editor_settings-4.7.tres" << EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          EOF
+      - name: Export Android debug APK
+        script: |
+          set -e
+          GODOT_BIN="$(find "$CM_BUILD_DIR/godot" -type f -path '*Godot.app/Contents/MacOS/Godot' | head -n 1)"
+          mkdir -p "$CM_BUILD_DIR/build"
+          "$GODOT_BIN" --headless --path "$CM_BUILD_DIR" --export-debug Android "$CM_BUILD_DIR/build/MahjongChristmas-debug.apk"
+    artifacts:
+      - build/**/*.apk
+
+# This first workflow is intentionally unsigned and does not publish to Google
+# Play. Add a Codemagic Android signing identity and a separate release workflow
+# only when the Play Store upload key and service-account credentials are ready.
