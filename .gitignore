@@ -1,0 +1,32 @@
+# Godot editor/import cache
+.godot/
+.import/
+*.import
+
+# Exported Android packages and signing artifacts
+*.apk
+*.aab
+*.idsig
+*.keystore
+*.jks
+
+# Local screenshots and temporary verification captures
+_*.png
+*-verify.png
+
+# Android/Gradle generated or machine-local files
+android/build/build/
+android/build/.gradle/
+android/build/libs/
+android/build/src/main/assets/
+android/build/src/instrumented/
+android/build/src/androidTestInstrumented/
+android/build/local.properties
+android/build/keystore.properties
+android/build/*.keystore
+android/build/*.jks
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
