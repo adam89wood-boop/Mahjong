@@ -10,6 +10,12 @@
 *.keystore
 *.jks
 
+# Exported iOS packages/Xcode project and signing artifacts
+*.ipa
+build/ios/
+*.mobileprovision
+*.p12
+
 # Local screenshots and temporary verification captures
 _*.png
 *-verify.png

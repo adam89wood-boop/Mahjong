@@ -48,6 +48,48 @@ workflows:
     artifacts:
       - build/**/*.apk
 
-# This first workflow is intentionally unsigned and does not publish to Google
-# Play. Add a Codemagic Android signing identity and a separate release workflow
-# only when the Play Store upload key and service-account credentials are ready.
+  mahjong-christmas-ios:
+    name: Mahjong Christmas iOS
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    environment:
+      vars:
+        GODOT_VERSION: 4.7.2
+        GODOT_RELEASE: 4.7.2-stable
+    scripts:
+      - name: Install Godot and iOS export templates
+        script: |
+          set -e
+          curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_macos.universal.zip"
+          unzip -q godot.zip -d godot
+          GODOT_BIN="$(find "$CM_BUILD_DIR/godot" -type f -path '*Godot.app/Contents/MacOS/Godot' | head -n 1)"
+          test -n "$GODOT_BIN"
+          chmod +x "$GODOT_BIN"
+          curl -L -o godot_export_templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          "$GODOT_BIN" --headless --editor --path "$CM_BUILD_DIR" --install-export-templates "$CM_BUILD_DIR/godot_export_templates.tpz" --quit
+      - name: Export iOS Xcode project
+        script: |
+          set -e
+          GODOT_BIN="$(find "$CM_BUILD_DIR/godot" -type f -path '*Godot.app/Contents/MacOS/Godot' | head -n 1)"
+          mkdir -p "$CM_BUILD_DIR/build/ios"
+          "$GODOT_BIN" --headless --path "$CM_BUILD_DIR" --export-release iOS "$CM_BUILD_DIR/build/ios/MahjongChristmas.ipa"
+    artifacts:
+      - build/ios/**/*
+
+# This first Android workflow is intentionally unsigned and does not publish to
+# Google Play. Add a Codemagic Android signing identity and a separate release
+# workflow only when the Play Store upload key and service-account credentials
+# are ready.
+#
+# The iOS workflow currently only generates the Xcode project
+# (application/export_project_only=true in export_presets.cfg) and does not
+# build or sign an .ipa. Once an Apple Developer Program membership and
+# Codemagic iOS code signing (certificate + provisioning profile, or the
+# App Store Connect integration) are set up, flip export_project_only off and
+# add an `xcode-project build-ipa` step plus a signing environment group here.
