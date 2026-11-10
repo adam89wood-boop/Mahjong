@@ -40,6 +40,10 @@ workflows:
           set -e
           GODOT_BIN="$(find "$CM_BUILD_DIR/godot" -type f -path '*Godot.app/Contents/MacOS/Godot' | head -n 1)"
           mkdir -p "$CM_BUILD_DIR/build"
+          # Git on Windows does not retain this Unix executable bit. Godot calls
+          # the wrapper during Android export, so repair it on the macOS runner.
+          perl -pi -e 's/\r$//' "$CM_BUILD_DIR/android/build/gradlew"
+          chmod +x "$CM_BUILD_DIR/android/build/gradlew"
           "$GODOT_BIN" --headless --path "$CM_BUILD_DIR" --export-debug Android "$CM_BUILD_DIR/build/MahjongChristmas-debug.apk"
     artifacts:
       - build/**/*.apk
